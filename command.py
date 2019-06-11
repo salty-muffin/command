@@ -1,5 +1,13 @@
 import subprocess
 
+# function for getting command output as string (and waiting for the command to finish)
+def command_wait(command):
+    child = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+    child.wait()
+    output = child.communicate()[0]
+    return output.decode()
+
+    
 class Command:
     """a class for handling system commands"""
     def __init__(self, command):
