@@ -1,6 +1,4 @@
 import subprocess
-import time
-
     
 class Command:
     """
@@ -42,16 +40,13 @@ class Command:
         """
         waits for the command to finish and returns result
         """
-        while not self.done():
-            time.sleep(0.01)
-
         return self._child.communicate()[0].decode()
 
     def result(self) -> str:
         """
         returns result. raises error if called before the command is done
         """
-        if self.is_done:
+        if self._done:
             return self._child.communicate()[0].decode()
         else:
             raise RuntimeError('result called before the subprocess was done')
