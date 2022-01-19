@@ -1,39 +1,57 @@
 import subprocess
-
-# function for getting command output as string (and waiting for the command to finish)
-def command_wait(command):
-    child = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
-    child.wait()
-    output = child.communicate()[0]
-    return output.decode()
+import time
 
     
 class Command:
-    """a class for handling system commands"""
-    def __init__(self, command):
-        self.command = command
-        self.is_executed = False
-        self.is_done = False
+    """
+    for handling system commands (asynchronously or synchronously)
+    """
+    def __init__(self, *args: str, execute=False) -> None:
+        """
+        args: command arguments
+        execute: if the command is to executed immediatly
+        """
+        self._args = args
+        self._child = None
+        self._done = False
 
-    # executes command
-    def execute(self):
-        self.child = subprocess.Popen(self.command, stdout=subprocess.PIPE, shell=True)
-        self.is_executed = True
+        if execute:
+            self.execute()
 
-    # asks if done executing. returns boolean. raises ValueError if called before command execution
-    def done(self):
-        if self.is_executed:
-            if self.child.poll() is not None:
-                self.is_done = True
+    def execute(self) -> None:
+        """
+        executes command
+        """
+        self._child = subprocess.Popen(self._args, stdout=subprocess.PIPE, shell=True)
+        self._executed = True
+
+    def done(self) -> bool:
+        """
+        asks if done executing. returns boolean. raises error, if called before command execution
+        """
+        if self._child is not None:
+            if self._child.poll() is not None:
+                self._done = True
                 return True
             else:
                 return False
         else:
-            raise ValueError('completion checked before execution')
+            raise RuntimeError('subprocess completion checked before execution')
 
-    # returns result. raises ValueError if called before the command is done
-    def result(self):
+    def wait(self) -> str:
+        """
+        waits for the command to finish and returns result
+        """
+        while not self.done():
+            time.sleep(0.01)
+
+        return self._child.communicate()[0].decode()
+
+    def result(self) -> str:
+        """
+        returns result. raises error if called before the command is done
+        """
         if self.is_done:
-            return self.child.communicate()[0].decode()
+            return self._child.communicate()[0].decode()
         else:
-            raise ValueError('result called before the command was done')
+            raise RuntimeError('result called before the subprocess was done')
